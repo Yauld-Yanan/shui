@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可编辑表格</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 100%;
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            min-width: 0;
+            text-align: center;
+            transition: all 0.3s;
+            word-break: break-word;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .editable {
+            cursor: pointer;
+        }
+        .editable:focus {
+            background-color: #ffffcc;
+            outline: none;
+        }
+        .controls {
+            margin: 20px auto;
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        button {
+            margin: 0;
+            padding: 8px 15px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
+            transition: all 0.3s;
+            flex-grow: 1;
+            max-width: 150px;
+        }
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #editableTable {
+            background-color: white;
+        }
+
+        /* 移动端适配 */
+        @media screen and (max-width: 600px) {
+            th, td {
+                padding: 8px 5px;
+                font-size: 0.85rem;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            button {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="title-container">
+        <h1 class="editable-title" contenteditable="true">表格标题</h1>
+    </div>
+    <div class="controls">
+        <button onclick="addRow()">添加行</button>
+        <!-- <button onclick="deleteSelectedRow()">删除选中行</button> -->
+        <button onclick="exportToImage()">导出为图片</button>
+    </div>
+    <table id="editableTable">
+        <tr>
+            <th class="editable" contenteditable="true">标题1</th>
+            <th class="editable" contenteditable="true">标题2</th>
+            <th>操作</th>
+        </tr>
+        <tr>
+            <td class="editable" contenteditable="true">内容1</td>
+            <td class="editable" contenteditable="true">内容2</td>
+            <td><button onclick="deleteThisRow(this)">删除</button></td>
+        </tr>
+    </table>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        function addRow() {
+            const table = document.getElementById('editableTable');
+            const newRow = table.insertRow();
+
+            // 固定两列结构
+            for (let i = 0; i < 2; i++) {
+                const cell = newRow.insertCell();
+                cell.className = 'editable';
+                cell.contentEditable = true;
+                cell.textContent = '新内容';
+            }
+            // 添加删除按钮
+            const actionCell = newRow.insertCell();
+            actionCell.innerHTML = '<button onclick="deleteThisRow(this)">删除</button>';
+        }
+
+        function deleteThisRow(button) {
+            const row = button.parentNode.parentNode;
+            const table = document.getElementById('editableTable');
+
+            if (table.rows.length > 1) {
+                row.parentNode.removeChild(row);
+            } else {
+                alert('至少保留一行！');
+            }
+        }
+
+        function deleteSelectedRow() {
+            const table = document.getElementById('editableTable');
+            const selectedRow = prompt('请输入要删除的行号(从1开始):');
+            const rowIndex = parseInt(selectedRow) - 1;
+
+            if (isNaN(rowIndex) || rowIndex < 0 || rowIndex >= table.rows.length) {
+                alert('请输入有效的行号！');
+                return;
+            }
+
+            if (table.rows.length > 1) {
+                table.deleteRow(rowIndex);
+            } else {
+                alert('至少保留一行！');
+            }
+        }
+
+        function exportToImage() {
+            const title = document.querySelector('.editable-title');
+            const table = document.getElementById('editableTable');
+            
+            // 创建包含标题和表格的容器
+            const container = document.createElement('div');
+            container.style.padding = '20px';
+            container.style.backgroundColor = 'white';
+            container.style.borderRadius = '8px';
+            container.style.maxWidth = 'fit-content';
+            container.style.margin = '0 auto';
+            
+            const titleClone = title.cloneNode(true);
+            titleClone.style.border = 'none';
+            titleClone.style.padding = '0';
+            titleClone.style.marginBottom = '15px';
+            titleClone.style.fontSize = '24px';
+            
+            const tableClone = table.cloneNode(true);
+            tableClone.style.margin = '0';
+            tableClone.style.boxShadow = 'none';
+            
+            container.appendChild(titleClone);
+            container.appendChild(tableClone);
+            
+            // 移除操作列和按钮
+            const buttons = container.querySelectorAll('button');
+            buttons.forEach(button => button.parentNode.removeChild(button));
+            
+            const rows = container.querySelectorAll('tr');
+            rows.forEach(row => {
+                if(row.cells.length > 2) {
+                    row.deleteCell(2);
+                }
+            });
+            
+            // 临时添加到DOM进行截图
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.appendChild(container);
+            document.body.appendChild(tempDiv);
+            
+            html2canvas(container).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '表格截图.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                document.body.removeChild(tempDiv);
+            });
+        }
+    </script>
+</body>
+
+<style>
+    .title-container {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .editable-title {
+        display: inline-block;
+        padding: 10px 20px;
+        border: 2px dashed #3498db;
+        border-radius: 8px;
+        color: #2c3e50;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .editable-title:focus {
+        outline: none;
+        border-style: solid;
+        background-color: #f8f9fa;
+    }
+</style>
+</html>
